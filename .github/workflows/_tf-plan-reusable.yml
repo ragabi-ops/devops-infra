@@ -49,10 +49,10 @@ jobs:
       - name: Init
         working-directory: ${{ inputs.module_path }}
         run: |
-          if [ "${{ inputs.use_backend_config }}" = "true" ]; then
-            terraform init -backend-config=backend.hcl
+          if [ -f backend.hcl ]; then
+            terraform init -reconfigure -backend-config=backend.hcl
           else
-            terraform init -backend=false
+            terraform init
           fi
 
       - name: Plan
