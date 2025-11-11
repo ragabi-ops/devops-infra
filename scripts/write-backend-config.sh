@@ -30,8 +30,9 @@ popd >/dev/null
 # Backend files for other stacks
 NETWORK_DIR="$ROOT_DIR/terraform/network"
 EKS_DIR="$ROOT_DIR/terraform/eks"
+GITHUB_OIDC_DIR="$ROOT_DIR/terraform/github-oidc"
 
-mkdir -p "$NETWORK_DIR" "$EKS_DIR"
+mkdir -p "$NETWORK_DIR" "$EKS_DIR" "$GITHUB_OIDC_DIR"
 
 cat > "$NETWORK_DIR/backend.hcl" <<EOF
 bucket         = "${BUCKET_NAME}"
@@ -49,6 +50,14 @@ dynamodb_table = "${DDB_TABLE}"
 encrypt        = true
 EOF
 
+cat > "$GITHUB_OIDC_DIR/backend.hcl" <<EOF
+bucket         = "${BUCKET_NAME}"
+key            = "github-oidc/terraform.tfstate"
+region         = "${REGION}"
+dynamodb_table = "${DDB_TABLE}"
+encrypt        = true
+EOF
+
 # EKS remote_state variables so it can read network outputs
 cat > "$EKS_DIR/remote_state.auto.tfvars" <<EOF
 state_bucket         = "${BUCKET_NAME}"
@@ -60,4 +69,5 @@ EOF
 echo "Wrote:"
 echo " - terraform/network/backend.hcl"
 echo " - terraform/eks/backend.hcl"
+echo " - terraform/github-oidc/backend.hcl"
 echo " - terraform/eks/remote_state.auto.tfvars"
