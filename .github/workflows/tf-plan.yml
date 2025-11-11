@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        description: Which module
+        description: Terraform Module Path
         required: true
         type: choice
         options: [terraform/backend-s3-state, terraform/network, terraform/eks]
@@ -15,31 +15,8 @@ on:
       azs:          { description: AZs JSON, required: false, default: '["eu-west-1a","eu-west-1b"]' }
 
 jobs:
-  backend-apply:
-    runs-on: ubuntu-latest
-    env:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.aws_region }}
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.9.7'
-      - name: Backend apply (local backend)
-        working-directory: terraform/backend-s3-state
-        env:
-          TF_VAR_aws_region: ${{ inputs.aws_region }}
-        run: |
-          terraform init
-          terraform apply -input=false -auto-approve
-      - name: Write backend configs
-        run: ./scripts/write-backend-config.sh
 
   plan:
-    needs: backend-apply
     uses: ./.github/workflows/_tf-plan-reusable.yml
     with:
       module_path: ${{ inputs.module }}

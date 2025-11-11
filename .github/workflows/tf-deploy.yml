@@ -41,33 +41,7 @@ jobs:
             echo "This workflow can only run on master."; exit 1;
           fi
 
-  backend-apply:
-    runs-on: ubuntu-latest
-    needs: guard-branch
-    if: inputs.deployAll == true || inputs.deploy_backend == true || inputs.deploy_network == true || inputs.deploy_eks == true
-    env:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.aws_region }}
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.9.7'
-      - name: Backend apply (local backend)
-        working-directory: terraform/backend-s3-state
-        env:
-          TF_VAR_aws_region: ${{ inputs.aws_region }}
-        run: |
-          terraform init
-          terraform apply -input=false -auto-approve
-      - name: Write backend configs
-        run: ./scripts/write-backend-config.sh
-
   network-deploy:
-    needs: backend-apply
     if: inputs.deployAll == true || inputs.deploy_network == true
     uses: ./.github/workflows/_tf-deploy-reusable.yml
     with:

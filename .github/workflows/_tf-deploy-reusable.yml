@@ -23,23 +23,18 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
+    env:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Bootstrap for all workflows
+        uses: ./.github/actions/bootstrap-pipeline
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.aws_region }}
+          aws_region: ${{ inputs.aws_region }}
+          aws_role_to_assume: ${{ env.AWS_ROLE_TO_ASSUME }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.9.7'
-
-      - name: Init
+      - name: Terraform Init
         working-directory: ${{ inputs.module_path }}
         run: |
           if [ -f backend.hcl ]; then
@@ -48,14 +43,14 @@ jobs:
             terraform init -backend=false
           fi
 
-      - name: Validate
+      - name: Terraform Validate
         working-directory: ${{ inputs.module_path }}
         run: terraform validate
 
       - name: Write backend configs
         run: ./scripts/write-backend-config.sh
         
-      - name: Apply
+      - name: Terraform Apply
         working-directory: ${{ inputs.module_path }}
         run: |
           ARGS=""
