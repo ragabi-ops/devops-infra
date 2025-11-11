@@ -1,4 +1,4 @@
-name: _tf-plan-reusable
+name: _tf-deploy-reusable
 permissions:
   id-token: write
   contents: read
@@ -12,10 +12,6 @@ on:
       aws_region:
         required: true
         type: string
-      use_backend_config:
-        required: false
-        type: boolean
-        default: false
       extra_tfvars:
         required: false
         type: string
@@ -25,24 +21,18 @@ on:
         required: true
 
 jobs:
-  plan:
+  deploy:
     runs-on: ubuntu-latest
-
-    env:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials via OIDC
+      - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.aws_region }}
-
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -55,17 +45,18 @@ jobs:
           if [ -f backend.hcl ]; then
             terraform init -reconfigure -backend-config=backend.hcl
           else
-            terraform init
+            terraform init -backend=false
           fi
 
-      - name: Plan
+      - name: Validate
         working-directory: ${{ inputs.module_path }}
-        env:
-          TF_VAR_aws_region: ${{ inputs.aws_region }}
+        run: terraform validate
+
+      - name: Apply
+        working-directory: ${{ inputs.module_path }}
         run: |
           ARGS=""
           if [ -n "${{ inputs.extra_tfvars }}" ]; then
             ARGS='${{ inputs.extra_tfvars }}'
           fi
-          terraform validate
-          terraform plan -input=false -no-color $ARGS
+          terraform apply -input=false -auto-approve $ARGS

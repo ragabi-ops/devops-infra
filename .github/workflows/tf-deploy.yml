@@ -1,0 +1,86 @@
+name: terraform-deploy
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        type: string
+        required: true
+        default: eu-west-1
+      azs:
+        type: string
+        required: true
+        default: '["eu-west-1a","eu-west-1b"]'
+      deployAll:
+        type: boolean
+        required: false
+        default: false
+      deploy_backend:
+        type: boolean
+        required: false
+        default: false
+      deploy_network:
+        type: boolean
+        required: false
+        default: false
+      deploy_eks:
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  guard-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only master branch
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+            echo "This workflow can only run on master."; exit 1;
+          fi
+
+  backend-apply:
+    runs-on: ubuntu-latest
+    needs: guard-branch
+    if: inputs.deployAll == true || inputs.deploy_backend == true || inputs.deploy_network == true || inputs.deploy_eks == true
+    env:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws_region }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.7'
+      - name: Backend apply (local backend)
+        working-directory: terraform/backend-s3-state
+        env:
+          TF_VAR_aws_region: ${{ inputs.aws_region }}
+        run: |
+          terraform init
+          terraform apply -input=false -auto-approve
+      - name: Write backend configs
+        run: ./scripts/write-backend-config.sh
+
+  network-deploy:
+    needs: backend-apply
+    if: inputs.deployAll == true || inputs.deploy_network == true
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/network
+      aws_region: ${{ inputs.aws_region }}
+      extra_tfvars: ${{ format('-var=azs={0}', inputs.azs) }}
+    secrets: inherit
+
+  eks-deploy:
+    needs: network-deploy
+    if: inputs.deployAll == true || inputs.deploy_eks == true
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/eks
+      aws_region: ${{ inputs.aws_region }}
+    secrets: inherit

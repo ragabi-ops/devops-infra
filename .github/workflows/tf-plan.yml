@@ -12,7 +12,6 @@ on:
         type: choice
         options: [terraform/backend-s3-state, terraform/network, terraform/eks]
       aws_region:   { description: AWS region, required: true, default: eu-west-1 }
-      project_name: { description: Project name, required: false, default: checkpoint-cloud }
       azs:          { description: AZs JSON, required: false, default: '["eu-west-1a","eu-west-1b"]' }
 
 jobs:
@@ -21,7 +20,6 @@ jobs:
     with:
       module_path: ${{ inputs.module }}
       aws_region: ${{ inputs.aws_region }}
-      project_name: ${{ inputs.project_name }}
       use_backend_config: ${{ inputs.module != 'terraform/backend-s3-state' }}
       extra_tfvars: ${{ inputs.module == 'terraform/network' && format('-var=azs={0}', inputs.azs) || '' }}
     secrets: inherit
