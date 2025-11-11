@@ -47,8 +47,9 @@ jobs:
           terraform apply -input=false -auto-approve
       - name: Write backend configs
         run: ./scripts/write-backend-config.sh
-        
+
   plan:
+    needs: backend-apply
     runs-on: ubuntu-latest
 
     env:
