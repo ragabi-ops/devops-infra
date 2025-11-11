@@ -1,0 +1,62 @@
+name: _tf-deploy-reusable
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      module_path:
+        required: true
+        type: string
+      aws_region:
+        required: true
+        type: string
+      extra_tfvars:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9.7'
+
+      - name: Init
+        working-directory: ${{ inputs.module_path }}
+        run: |
+          if [ -f backend.hcl ]; then
+            terraform init -reconfigure -backend-config=backend.hcl
+          else
+            terraform init -backend=false
+          fi
+
+      - name: Validate
+        working-directory: ${{ inputs.module_path }}
+        run: terraform validate
+
+      - name: Apply
+        working-directory: ${{ inputs.module_path }}
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.extra_tfvars }}" ]; then
+            ARGS='${{ inputs.extra_tfvars }}'
+          fi
+          terraform apply -input=false -auto-approve $ARGS
