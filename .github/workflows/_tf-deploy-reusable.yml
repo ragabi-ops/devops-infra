@@ -52,6 +52,9 @@ jobs:
         working-directory: ${{ inputs.module_path }}
         run: terraform validate
 
+      - name: Write backend configs
+        run: ./scripts/write-backend-config.sh
+        
       - name: Apply
         working-directory: ${{ inputs.module_path }}
         run: |
