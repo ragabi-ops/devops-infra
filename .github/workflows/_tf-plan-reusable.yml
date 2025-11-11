@@ -58,6 +58,9 @@ jobs:
             terraform init
           fi
 
+      - name: Write backend configs
+        run: ./scripts/write-backend-config.sh
+        
       - name: Plan
         working-directory: ${{ inputs.module_path }}
         env:
