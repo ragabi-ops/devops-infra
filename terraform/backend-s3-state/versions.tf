@@ -6,4 +6,9 @@ terraform {
       version = "~> 5.55"
     }
   }
+  backend "s3" {
+    bucket = "checkpoint-cloud-tf-state"
+    key    = "backend-s3-state/backend-s3-state.tfstate"
+    region = "eu-west-1"
+  }
 }
