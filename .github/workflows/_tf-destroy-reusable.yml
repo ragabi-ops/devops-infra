@@ -1,0 +1,58 @@
+name: _tf-destroy-reusable
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      module_path:
+        required: true
+        type: string
+      aws_region:
+        required: true
+        type: string
+      extra_tfvars:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Bootstrap for all workflows
+        uses: ./.github/actions/bootstrap-pipeline
+        with:
+          aws_region: ${{ inputs.aws_region }}
+          aws_role_to_assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.module_path }}
+        run: |
+          if [ -f backend.hcl ]; then
+            terraform init -reconfigure -backend-config=backend.hcl
+          else
+            terraform init
+          fi
+
+      - name: Terraform Validate
+        working-directory: ${{ inputs.module_path }}
+        run: terraform validate
+
+      - name: Terraform Destroy
+        working-directory: ${{ inputs.module_path }}
+        env:
+          TF_VAR_aws_region: ${{ inputs.aws_region }}
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.extra_tfvars }}" ]; then
+            ARGS='${{ inputs.extra_tfvars }}'
+          fi
+          terraform destroy -input=false -auto-approve $ARGS

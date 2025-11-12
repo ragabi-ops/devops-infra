@@ -117,5 +117,7 @@ This stack configures cluster add-ons such as:
 * **Remote state wiring:** Every non-backend stack uses `terraform_remote_state` to read outputs (e.g., VPC IDs, role ARNs).
 * **Backend config injection:** All `backend.hcl` files are written automatically by the script after bootstrapping the S3 state.
 * **CI/CD:** GitHub Actions workflows use OIDC to authenticate with AWS and deploy these stacks safely without static credentials.
+* **GITHUB-OIDC NEED TO BE DELETE MANUALLY SINCE ACTIONS IS USING HES ROLE:**
+
 
 
