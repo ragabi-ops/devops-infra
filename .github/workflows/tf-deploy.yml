@@ -30,6 +30,10 @@ on:
         type: boolean
         required: false
         default: false
+      deploy_post_eks:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   guard-branch:
@@ -57,5 +61,13 @@ jobs:
     uses: ./.github/workflows/_tf-deploy-reusable.yml
     with:
       module_path: terraform/eks
+      aws_region: ${{ inputs.aws_region }}
+    secrets: inherit
+
+  post-eks-deploy:
+    if: inputs.deployAll == true || inputs.deploy_eks == true
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/post-eks
       aws_region: ${{ inputs.aws_region }}
     secrets: inherit
