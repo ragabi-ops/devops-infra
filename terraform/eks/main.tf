@@ -39,6 +39,8 @@ module "eks" {
   vpc_id     = local.vpc_id
   subnet_ids = local.private_subnet_ids
 
+  endpoint_public_access  = true
+
   enable_cluster_creator_admin_permissions = false
 
   eks_managed_node_group_defaults = {
@@ -53,7 +55,7 @@ module "eks" {
       github_ci = {
         principal_arn = data.terraform_remote_state.github_oidc.outputs.github_actions_role_arn
         policy_associations = [{
-          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster", namespaces = [] }
         }]
       }
@@ -62,7 +64,7 @@ module "eks" {
       sso_admin = {
         principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/${var.aws_region}/AWSReservedSSO_AdministratorAccess_fe720cc4333d9901"
         policy_associations = [{
-          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = { type = "cluster", namespaces = [] }
         }]
       }
