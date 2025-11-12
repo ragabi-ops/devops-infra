@@ -41,8 +41,6 @@ module "eks" {
   
   cluster_endpoint_public_access = true
 
-  endpoint_public_access  = true
-
   enable_cluster_creator_admin_permissions = false
 
   eks_managed_node_group_defaults = {
