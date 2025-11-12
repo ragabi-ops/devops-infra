@@ -64,6 +64,7 @@ state_bucket         = "${BUCKET_NAME}"
 state_region         = "${REGION}"
 network_state_key    = "network/terraform.tfstate"
 project_name         = "${PROJECT_NAME}"
+github_oidc_state_key = "github-oidc/terraform.tfstate"
 EOF
 
 echo "Wrote:"
