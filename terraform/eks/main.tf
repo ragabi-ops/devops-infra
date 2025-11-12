@@ -38,6 +38,8 @@ module "eks" {
 
   vpc_id     = local.vpc_id
   subnet_ids = local.private_subnet_ids
+  
+  cluster_endpoint_public_access = true
 
   endpoint_public_access  = true
 
