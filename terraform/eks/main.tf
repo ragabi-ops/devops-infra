@@ -44,9 +44,9 @@ module "eks" {
     instance_types = var.node_instance_types
   }
 
-  access_entries = data.terraform_remote_state.github_oidc.outputs.role_arn == null ? {} : {
+  access_entries = data.terraform_remote_state.github_oidc.outputs.github_actions_role_arn == null ? {} : {
     github_ci = {
-      principal_arn = data.terraform_remote_state.github_oidc.outputs.role_arn
+      principal_arn = data.terraform_remote_state.github_oidc.outputs.github_actions_role_arn
       
       policy_associations = [
         {
@@ -61,7 +61,7 @@ module "eks" {
   }
   eks_managed_node_groups = {
     default = {
-      name         = "${var.project_name}-eks-ng"
+      name         = "${var.project_name}"
       min_size     = var.min_size
       max_size     = var.max_size
       desired_size = var.desired_size
