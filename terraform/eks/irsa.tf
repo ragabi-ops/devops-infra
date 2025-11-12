@@ -26,10 +26,10 @@ irsa_roles = {
 }
 EOT
   type = map(object({
-    namespace        = string
-    service_account  = string
-    policy_arns      = optional(list(string), [])
-    inline_policies  = optional(map(string), {})
+    namespace       = string
+    service_account = string
+    policy_arns     = optional(list(string), [])
+    inline_policies = optional(map(string), {})
   }))
   default = {}
 }
