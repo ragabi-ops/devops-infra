@@ -42,6 +42,7 @@ jobs:
           fi
 
   network-deploy:
+    needs: guard-branch
     if: inputs.deployAll == true || inputs.deploy_network == true
     uses: ./.github/workflows/_tf-deploy-reusable.yml
     with:
@@ -51,7 +52,7 @@ jobs:
     secrets: inherit
 
   eks-deploy:
-    needs: network-deploy
+    needs: guard-branch
     if: inputs.deployAll == true || inputs.deploy_eks == true
     uses: ./.github/workflows/_tf-deploy-reusable.yml
     with:
