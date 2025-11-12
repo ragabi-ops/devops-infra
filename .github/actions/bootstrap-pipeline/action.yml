@@ -12,10 +12,9 @@ inputs:
     description: Script to write backend configs
     required: false
     default: ./scripts/write-backend-config.sh
-  inputs:
-    AWS_ROLE_TO_ASSUME:
-      description: AWS Role to assume
-      required: true
+  role-to-assume:
+    description: AWS Role to assume
+    required: true
 
 runs:
   using: "composite"
