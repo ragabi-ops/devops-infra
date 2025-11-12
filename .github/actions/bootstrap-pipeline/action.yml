@@ -1,3 +1,4 @@
+# .github/actions/bootstrap-pipeline/action.yml
 name: Backend apply (S3 state + write configs)
 description: Init/apply backend-s3-state and write backend.hcl for other stacks
 inputs:
@@ -19,12 +20,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-
     - name: Configure AWS credentials via OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.aws_role_to_assume }}
         aws-region: ${{ inputs.aws_region }}
+        role-session-name: gha-${{ github.run_id }}
+
+    - name: Verify caller identity
+      shell: bash
+      run: aws sts get-caller-identity
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3

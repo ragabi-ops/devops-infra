@@ -1,13 +1,13 @@
 variable "aws_region" {
   type        = string
   description = "AWS region"
-  default = "eu-west-1"
+  default     = "eu-west-1"
 }
 
 variable "project_name" {
   type        = string
   description = "Project name"
-  default = "checkpoint-cloud"
+  default     = "checkpoint-cloud"
 }
 
 # Remote state (network)
@@ -39,21 +39,21 @@ variable "cluster_version" {
 }
 
 variable "node_instance_types" {
-  type        = list(string)
-  default     = ["t3.large"]
+  type    = list(string)
+  default = ["t3.large"]
 }
 
 variable "desired_size" {
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
 
 variable "max_size" {
-  type        = number
-  default     = 2
+  type    = number
+  default = 2
 }
 
 variable "min_size" {
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
