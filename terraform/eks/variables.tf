@@ -26,6 +26,11 @@ variable "network_state_key" {
   description = "Object key for the network state (e.g., network/terraform.tfstate)"
 }
 
+variable "github_oidc_state_key" {
+  type        = string
+  description = "Object key for the github-oidc state (e.g., github-oidc/terraform.tfstate)"
+}
+
 # EKS options
 variable "cluster_version" {
   type        = string
