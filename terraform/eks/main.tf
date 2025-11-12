@@ -38,8 +38,8 @@ module "eks" {
 
   vpc_id     = local.vpc_id
   subnet_ids = local.private_subnet_ids
-
-  endpoint_public_access  = true
+  
+  cluster_endpoint_public_access = true
 
   enable_cluster_creator_admin_permissions = false
 
