@@ -32,6 +32,9 @@ jobs:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
       - name: Bootstrap for all workflows
         uses: ./.github/actions/bootstrap-pipeline
         with:
