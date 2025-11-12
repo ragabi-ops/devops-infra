@@ -34,22 +34,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        
+      - name: Bootstrap for all workflows
+        uses: ./.github/actions/bootstrap-pipeline
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.aws_region }}
+          aws_region: ${{ inputs.aws_region }}
+          aws_role_to_assume: ${{ env.AWS_ROLE_TO_ASSUME }}
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.9.7'
-
-      - name: Init
+      - name: Terraform Init
         working-directory: ${{ inputs.module_path }}
         run: |
           if [ -f backend.hcl ]; then
@@ -58,7 +50,11 @@ jobs:
             terraform init
           fi
 
-      - name: Plan
+      - name: Terraform Validate
+        working-directory: ${{ inputs.module_path }}
+        run: terraform validate
+
+      - name: Terraform Plan
         working-directory: ${{ inputs.module_path }}
         env:
           TF_VAR_aws_region: ${{ inputs.aws_region }}
@@ -67,5 +63,4 @@ jobs:
           if [ -n "${{ inputs.extra_tfvars }}" ]; then
             ARGS='${{ inputs.extra_tfvars }}'
           fi
-          terraform validate
           terraform plan -input=false -no-color $ARGS

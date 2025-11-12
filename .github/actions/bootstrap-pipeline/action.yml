@@ -1,0 +1,45 @@
+name: Backend apply (S3 state + write configs)
+description: Init/apply backend-s3-state and write backend.hcl for other stacks
+inputs:
+  aws_region:
+    description: AWS region for backend bootstrap
+    required: true
+  working_directory:
+    description: Path to backend module
+    required: false
+    default: terraform/backend-s3-state
+  write_script:
+    description: Script to write backend configs
+    required: false
+    default: ./scripts/write-backend-config.sh
+  aws_role_to_assume:
+    description: AWS Role to assume
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Configure AWS credentials via OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws_role_to_assume }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.9.7'
+
+    - name: Terraform Backend apply
+      working-directory: ${{ inputs.working_directory }}
+      shell: bash
+      env:
+        TF_VAR_aws_region: ${{ inputs.aws_region }}
+      run: |
+        terraform init
+        terraform apply -input=false -auto-approve
+
+    - name: Write backend configs
+      shell: bash
+      run: ${{ inputs.write_script }}

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        description: Which module
+        description: Terraform Module Path
         required: true
         type: choice
         options: [terraform/backend-s3-state, terraform/network, terraform/eks]
@@ -15,6 +15,7 @@ on:
       azs:          { description: AZs JSON, required: false, default: '["eu-west-1a","eu-west-1b"]' }
 
 jobs:
+
   plan:
     uses: ./.github/workflows/_tf-plan-reusable.yml
     with:
