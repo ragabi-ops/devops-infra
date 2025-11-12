@@ -54,6 +54,20 @@ resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
   policy_arn = local.policy_arn_to_attach
 }
 
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.this.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.this.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.this.token
+  }
+}
+
 # Create the ServiceAccount (requires root to provide a configured kubernetes provider)
 resource "kubernetes_service_account" "controller" {
   metadata {
