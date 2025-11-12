@@ -8,6 +8,16 @@ data "terraform_remote_state" "network" {
   }
 }
 
+# Read github oidc role arn from github-oidc stack
+data "terraform_remote_state" "github_oidc" {
+  backend = "s3"
+  config = {
+    bucket = var.state_bucket
+    region = var.state_region
+    key    = var.github_oidc_state_key
+  }
+}
+
 locals {
   vpc_id             = data.terraform_remote_state.network.outputs.vpc_id
   private_subnet_ids = data.terraform_remote_state.network.outputs.private_subnet_ids
@@ -34,8 +44,24 @@ module "eks" {
     instance_types = var.node_instance_types
   }
 
+  access_entries = data.terraform_remote_state.github_oidc.outputs.role_arn == null ? {} : {
+    github_ci = {
+      principal_arn = data.terraform_remote_state.github_oidc.outputs.role_arn
+      
+      policy_associations = [
+        {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+          access_scope = {
+            type       = "cluster"
+            namespaces = []
+          }
+        }
+      ]
+    }
+  }
   eks_managed_node_groups = {
     default = {
+      name         = "${var.project_name}-eks-ng"
       min_size     = var.min_size
       max_size     = var.max_size
       desired_size = var.desired_size
