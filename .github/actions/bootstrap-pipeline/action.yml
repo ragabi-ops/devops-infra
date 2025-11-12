@@ -23,10 +23,10 @@ runs:
     - name: Configure AWS credentials via OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-to-assume: ${{ inputs.aws_role_to_assume }}
         aws-region: ${{ inputs.aws_region }}
         role-session-name: gha-${{ github.run_id }}
-        
+
     - name: Verify caller identity
       run: aws sts get-caller-identity
 
