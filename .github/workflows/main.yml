@@ -1,0 +1,118 @@
+name: terraform-plan-and-deploy
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  # Plan on PRs to master when any *.tf changes
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '**/*.tf'
+  # Deploy on merges to master when any *.tf changes
+  push:
+    branches: [ master ]
+    paths:
+      - '**/*.tf'
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      network: ${{ steps.filter.outputs.network }}
+      eks:     ${{ steps.filter.outputs.eks }}
+      post-eks: ${{ steps.filter.outputs.post-eks }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'terraform/backend-s3-state/**/*.tf'
+            network:
+              - 'terraform/network/**/*.tf'
+            eks:
+              - 'terraform/eks/**/*.tf'
+            post-eks:
+              - 'terraform/post-eks/**/*.tf'
+
+  #PLAN on PR 
+  plan-backend:
+    if: github.event_name == 'pull_request' && needs.detect.outputs.backend == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-plan-reusable.yml
+    with:
+      module_path: terraform/backend-s3-state
+      aws_region: eu-west-1
+      use_backend_config: false
+    secrets: inherit
+
+  plan-network:
+    if: github.event_name == 'pull_request' && needs.detect.outputs.network == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-plan-reusable.yml
+    with:
+      module_path: terraform/network
+      aws_region: eu-west-1
+      use_backend_config: true
+      # avoid quote-escaping errors; pass the AZ list directly
+      extra_tfvars: ${{ format('-var=azs={0}', '["eu-west-1a","eu-west-1b"]') }}
+    secrets: inherit
+
+  plan-eks:
+    if: github.event_name == 'pull_request' && needs.detect.outputs.eks == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-plan-reusable.yml
+    with:
+      module_path: terraform/eks
+      aws_region: eu-west-1
+      use_backend_config: true
+    secrets: inherit
+
+  plan-post-eks:
+    if: github.event_name == 'pull_request' && needs.detect.outputs.post-eks == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-plan-reusable.yml
+    with:
+      module_path: terraform/post-eks
+      aws_region: eu-west-1
+      use_backend_config: true
+    secrets: inherit
+
+  # DEPLOY MERGE TO MASTER
+  backend-deploy:
+    if: github.event_name == 'push' && needs.detect.outputs.backend == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/backend-s3-state
+      aws_region: eu-west-1
+    secrets: inherit
+
+  network-deploy:
+    if: github.event_name == 'push' && needs.detect.outputs.network == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/network
+      aws_region: eu-west-1
+    secrets: inherit
+
+  eks-deploy:
+    if: github.event_name == 'push' && needs.detect.outputs.eks == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/eks
+      aws_region: eu-west-1
+    secrets: inherit
+
+  post-eks-deploy:
+    if: github.event_name == 'push' && needs.detect.outputs.post-eks == 'true'
+    needs: detect
+    uses: ./.github/workflows/_tf-deploy-reusable.yml
+    with:
+      module_path: terraform/post-eks
+      aws_region: eu-west-1
