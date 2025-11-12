@@ -116,3 +116,4 @@ jobs:
     with:
       module_path: terraform/post-eks
       aws_region: eu-west-1
+      secrets: inherit
