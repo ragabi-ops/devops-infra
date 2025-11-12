@@ -65,7 +65,8 @@ jobs:
     secrets: inherit
 
   post-eks-deploy:
-    if: inputs.deployAll == true || inputs.deploy_eks == true
+    needs: guard-branch
+    if: inputs.deployAll == true || inputs.deploy_post_eks == true
     uses: ./.github/workflows/_tf-deploy-reusable.yml
     with:
       module_path: terraform/post-eks
