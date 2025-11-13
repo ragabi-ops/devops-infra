@@ -29,7 +29,7 @@ locals {
 }
 
 resource "aws_iam_role" "alb_controller_irsa" {
-  name               = "${var.cluster_name}-alb-controller-irsa"
+  name = "${var.cluster_name}-alb-controller-irsa"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -61,7 +61,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = data.aws_eks_cluster.this.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.this.token
@@ -91,22 +91,24 @@ resource "helm_release" "alb_controller" {
   chart      = "aws-load-balancer-controller"
   version    = var.helm_chart_version
 
-  set {
-    name  = "serviceAccount.create"
-    value = "false"
-  }
-  set {
-    name  = "serviceAccount.name"
-    value = var.service_account_name
-  }
-  set {
-    name  = "region"
-    value = var.region
-  }
-  set {
-    name  = "clusterName"
-    value = var.cluster_name
-  }
+  set = [
+    {
+      name  = "serviceAccount.create"
+      value = "false"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = var.service_account_name
+    },
+    {
+      name  = "region"
+      value = var.region
+    },
+    {
+      name  = "clusterName"
+      value = var.cluster_name
+    }
+  ]
 
   create_namespace = false
 }

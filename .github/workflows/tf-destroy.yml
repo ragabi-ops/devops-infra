@@ -1,0 +1,83 @@
+name: terraform-destroy
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        type: string
+        required: true
+        default: eu-west-1
+      azs:
+        type: string
+        required: false
+        default: '["eu-west-1a","eu-west-1b"]'
+      destroyAll:
+        type: boolean
+        required: false
+        default: false
+      destroy_post_eks:
+        type: boolean
+        required: false
+        default: false
+      destroy_eks:
+        type: boolean
+        required: false
+        default: false
+      destroy_network:
+        type: boolean
+        required: false
+        default: false
+      confirm:
+        description: 'Type "DESTROY" to confirm irreversible deletion'
+        type: string
+        required: true
+        default: ''
+
+jobs:
+  guard-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only master branch
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+            echo "This workflow can only run on master."; exit 1;
+          fi
+      - name: Confirm typed DESTROY
+        run: |
+          if [ "${{ inputs.confirm }}" != "DESTROY" ]; then
+            echo 'You must type "DESTROY" to proceed.'; exit 1;
+          fi
+
+  # Destroy order: post-eks -> eks -> network
+
+  post-eks-destroy:
+    needs: guard-branch
+    if: inputs.destroyAll == true || inputs.destroy_post_eks == true
+    uses: ./.github/workflows/_tf-destroy-reusable.yml
+    with:
+      module_path: terraform/post-eks
+      aws_region: ${{ inputs.aws_region }}
+    secrets: inherit
+
+  eks-destroy:
+    needs: [guard-branch, post-eks-destroy]
+    if: inputs.destroyAll == true || inputs.destroy_eks == true
+    uses: ./.github/workflows/_tf-destroy-reusable.yml
+    with:
+      module_path: terraform/eks
+      aws_region: ${{ inputs.aws_region }}
+    secrets: inherit
+
+  network-destroy:
+    needs: [guard-branch, eks-destroy]
+    if: inputs.destroyAll == true || inputs.destroy_network == true
+    uses: ./.github/workflows/_tf-destroy-reusable.yml
+    with:
+      module_path: terraform/network
+      aws_region: ${{ inputs.aws_region }}
+      # If your network stack expects AZs as a var:
+      extra_tfvars: ${{ format('-var=azs={0}', inputs.azs) }}
+    secrets: inherit
